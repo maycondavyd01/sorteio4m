@@ -5,7 +5,6 @@ import { AppShell } from '@/components/AppShell';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search } from 'lucide-react';
-import type { Pedido, Bilhete } from '@/types';
 
 function maskPhone(value: string) {
   const digits = value.replace(/\D/g, '').slice(0, 11);
@@ -15,9 +14,16 @@ function maskPhone(value: string) {
   return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
 }
 
+interface PedidoComBilhetes {
+  id: string;
+  valor_total: number;
+  status: string;
+  bilhetes: { id: string; numero: number; status: string }[];
+}
+
 export default function PaginaMeusBilhetes() {
   const [whatsapp, setWhatsapp] = useState('');
-  const [pedidos, setPedidos] = useState<(Pedido & { bilhetes: Bilhete[] })[]>([]);
+  const [pedidos, setPedidos] = useState<PedidoComBilhetes[]>([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
 
@@ -39,7 +45,7 @@ export default function PaginaMeusBilhetes() {
 
       const { data: pedidosData } = await supabase
         .from('pedidos')
-        .select('*')
+        .select('id, valor_total, status')
         .eq('comprador_id', comprador.id)
         .order('created_at', { ascending: false });
 
@@ -48,14 +54,14 @@ export default function PaginaMeusBilhetes() {
         return;
       }
 
-      const result: (Pedido & { bilhetes: Bilhete[] })[] = [];
+      const result: PedidoComBilhetes[] = [];
       for (const p of pedidosData) {
         const { data: bilhetes } = await supabase
           .from('bilhetes')
-          .select('*')
+          .select('id, numero, status')
           .eq('pedido_id', p.id)
           .order('numero');
-        result.push({ ...p, bilhetes: bilhetes ?? [] } as Pedido & { bilhetes: Bilhete[] });
+        result.push({ ...p, bilhetes: bilhetes ?? [] });
       }
       setPedidos(result);
     } finally {

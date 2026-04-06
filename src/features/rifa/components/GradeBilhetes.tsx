@@ -1,13 +1,19 @@
 import { useMemo, useRef, useState, useCallback } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useCarrinho } from '@/store/useCarrinho';
-import type { Bilhete, FiltroStatus } from '@/types';
 import { cn } from '@/lib/utils';
 
 const COLS = 5;
 
+type FiltroStatus = 'todos' | 'disponivel' | 'pago' | 'reservado';
+
+interface BilheteRow {
+  numero: number;
+  status: string;
+}
+
 interface Props {
-  bilhetes: Bilhete[];
+  bilhetes: BilheteRow[];
   totalCotas: number;
 }
 
@@ -17,7 +23,7 @@ export function GradeBilhetes({ bilhetes, totalCotas }: Props) {
   const parentRef = useRef<HTMLDivElement>(null);
 
   const bilhetesMap = useMemo(() => {
-    const map = new Map<number, Bilhete>();
+    const map = new Map<number, BilheteRow>();
     bilhetes.forEach((b) => map.set(b.numero, b));
     return map;
   }, [bilhetes]);
@@ -76,7 +82,7 @@ export function GradeBilhetes({ bilhetes, totalCotas }: Props) {
     { label: 'Reservados', value: 'reservado', count: contagens.reservado, className: 'bg-rifa-reserved text-primary-foreground' },
   ];
 
-  const formatNum = (n: number) => String(n).padStart(totalCotas >= 1000 ? 3 : 3, '0');
+  const formatNum = (n: number) => String(n).padStart(3, '0');
 
   return (
     <div>

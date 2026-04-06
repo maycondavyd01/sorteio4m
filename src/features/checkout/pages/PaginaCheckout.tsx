@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Copy, Clock } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 
@@ -47,7 +47,6 @@ export default function PaginaCheckout() {
     formState: { errors },
   } = useForm<FormData>({ resolver: zodResolver(schema) });
 
-  // Poll for payment status
   useQuery({
     queryKey: ['pedido-status', pedidoId],
     queryFn: async () => {
@@ -57,7 +56,7 @@ export default function PaginaCheckout() {
         .select('status')
         .eq('id', pedidoId)
         .single();
-      if (data?.status === 'pago') {
+      if (data && data.status === 'pago') {
         toast.success('Pagamento confirmado! 🎉');
         limpar();
         navigate('/meus-bilhetes');
@@ -86,7 +85,6 @@ export default function PaginaCheckout() {
     if (!rifaId) return;
     setSubmitting(true);
     try {
-      // Upsert comprador
       let compradorId: string;
       const { data: existing } = await supabase
         .from('compradores')
@@ -102,11 +100,10 @@ export default function PaginaCheckout() {
           .insert({ nome: form.nome, whatsapp: form.whatsapp })
           .select('id')
           .single();
-        if (errC) throw errC;
+        if (errC || !newC) throw errC || new Error('Erro ao criar comprador');
         compradorId = newC.id;
       }
 
-      // Create pedido
       const pixCode = `00020126580014BR.GOV.BCB.PIX0136${crypto.randomUUID()}5204000053039865404${total.toFixed(2)}5802BR`;
       const { data: pedido, error: errP } = await supabase
         .from('pedidos')
@@ -118,9 +115,8 @@ export default function PaginaCheckout() {
         })
         .select()
         .single();
-      if (errP) throw errP;
+      if (errP || !pedido) throw errP || new Error('Erro ao criar pedido');
 
-      // Update bilhetes to reservado
       for (const numero of bilhetesSelecionados) {
         await supabase
           .from('bilhetes')
@@ -154,7 +150,7 @@ export default function PaginaCheckout() {
             <p className="text-sm text-muted-foreground mt-1">Copie o código e pague no seu banco</p>
           </div>
 
-          <TimerCountdown expiresAt={expiresAt!} />
+          {expiresAt && <TimerCountdown expiresAt={expiresAt} />}
 
           <div className="bg-secondary rounded-xl p-4">
             <p className="text-xs text-muted-foreground mb-2">PIX Copia e Cola:</p>
@@ -232,7 +228,7 @@ export default function PaginaCheckout() {
 function TimerCountdown({ expiresAt }: { expiresAt: string }) {
   const [remaining, setRemaining] = useState('');
 
-  useState(() => {
+  useEffect(() => {
     const interval = setInterval(() => {
       const diff = new Date(expiresAt).getTime() - Date.now();
       if (diff <= 0) {
@@ -245,7 +241,7 @@ function TimerCountdown({ expiresAt }: { expiresAt: string }) {
       setRemaining(`${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`);
     }, 1000);
     return () => clearInterval(interval);
-  });
+  }, [expiresAt]);
 
   return (
     <div className="text-center">

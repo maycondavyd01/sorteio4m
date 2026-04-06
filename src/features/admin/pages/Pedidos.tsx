@@ -2,7 +2,6 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import type { Pedido, Comprador } from '@/types';
 import { Check, X } from 'lucide-react';
 
 export default function Pedidos() {
@@ -13,10 +12,23 @@ export default function Pedidos() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('pedidos')
-        .select('*, comprador:compradores(*)')
+        .select('id, valor_total, status, created_at, comprador_id')
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return data as (Pedido & { comprador: Comprador })[];
+
+      // Fetch compradores separately
+      const compradorIds = [...new Set(data.map(p => p.comprador_id))];
+      const { data: compradores } = await supabase
+        .from('compradores')
+        .select('id, nome, whatsapp')
+        .in('id', compradorIds);
+
+      const compradorMap = new Map(compradores?.map(c => [c.id, c]) ?? []);
+
+      return data.map(p => ({
+        ...p,
+        comprador: compradorMap.get(p.comprador_id) ?? null,
+      }));
     },
   });
 
@@ -56,8 +68,8 @@ export default function Pedidos() {
           <tbody>
             {pedidos?.map((p) => (
               <tr key={p.id} className="border-b border-border">
-                <td className="py-3">{p.comprador?.nome}</td>
-                <td className="py-3">{p.comprador?.whatsapp}</td>
+                <td className="py-3">{p.comprador?.nome ?? '-'}</td>
+                <td className="py-3">{p.comprador?.whatsapp ?? '-'}</td>
                 <td className="py-3">R$ {Number(p.valor_total).toFixed(2).replace('.', ',')}</td>
                 <td className="py-3">
                   <span className={`text-xs font-bold px-2 py-1 rounded-full ${

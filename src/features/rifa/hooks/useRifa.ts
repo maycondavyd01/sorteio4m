@@ -1,6 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import type { Bilhete, Rifa } from '@/types';
 
 export function useRifa(id: string) {
   return useQuery({
@@ -12,7 +11,7 @@ export function useRifa(id: string) {
         .eq('id', id)
         .single();
       if (error) throw error;
-      return data as Rifa;
+      return data;
     },
   });
 }
@@ -27,7 +26,7 @@ export function useBilhetes(rifaId: string) {
         .eq('rifa_id', rifaId)
         .order('numero', { ascending: true });
       if (error) throw error;
-      return data as Bilhete[];
+      return data;
     },
     refetchInterval: 10000,
   });
@@ -42,7 +41,7 @@ export function useRifas() {
         .select('*')
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return data as Rifa[];
+      return data;
     },
   });
 }

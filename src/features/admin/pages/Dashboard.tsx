@@ -40,13 +40,13 @@ export default function Dashboard() {
     },
     {
       title: 'Bilhetes Vendidos',
-      value: stats?.bilhetesVendidos ?? 0,
+      value: String(stats?.bilhetesVendidos ?? 0),
       icon: Ticket,
       color: 'text-primary',
     },
     {
       title: 'Reservas Pendentes',
-      value: stats?.reservasPendentes ?? 0,
+      value: String(stats?.reservasPendentes ?? 0),
       icon: Clock,
       color: 'text-rifa-reserved',
     },

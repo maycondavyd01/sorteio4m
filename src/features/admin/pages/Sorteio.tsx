@@ -13,7 +13,7 @@ export default function Sorteio() {
   const { data: rifas } = useQuery({
     queryKey: ['admin-rifas-sorteio'],
     queryFn: async () => {
-      const { data } = await supabase.from('rifas').select('*').eq('status', 'ativa');
+      const { data } = await supabase.from('rifas').select('id, nome, status').eq('status', 'ativa');
       return data ?? [];
     },
   });
@@ -22,12 +22,11 @@ export default function Sorteio() {
     setSorteando(true);
     setGanhador(null);
 
-    // Simulate animation delay
     await new Promise((r) => setTimeout(r, 2000));
 
     const { data: bilhetesPagos } = await supabase
       .from('bilhetes')
-      .select('*, pedido:pedidos(*, comprador:compradores(*))')
+      .select('numero, pedido_id')
       .eq('rifa_id', rifaId)
       .eq('status', 'pago');
 
@@ -38,16 +37,32 @@ export default function Sorteio() {
     }
 
     const idx = Math.floor(Math.random() * bilhetesPagos.length);
-    const vencedor = bilhetesPagos[idx] as any;
+    const vencedor = bilhetesPagos[idx];
 
-    setGanhador({
-      nome: vencedor.pedido?.comprador?.nome ?? 'Desconhecido',
-      whatsapp: vencedor.pedido?.comprador?.whatsapp ?? '',
-      numero: vencedor.numero,
-    });
+    // Get pedido and comprador info
+    let nome = 'Desconhecido';
+    let whatsapp = '';
+    if (vencedor.pedido_id) {
+      const { data: pedido } = await supabase
+        .from('pedidos')
+        .select('comprador_id')
+        .eq('id', vencedor.pedido_id)
+        .single();
+      if (pedido) {
+        const { data: comprador } = await supabase
+          .from('compradores')
+          .select('nome, whatsapp')
+          .eq('id', pedido.comprador_id)
+          .single();
+        if (comprador) {
+          nome = comprador.nome;
+          whatsapp = comprador.whatsapp;
+        }
+      }
+    }
 
+    setGanhador({ nome, whatsapp, numero: vencedor.numero });
     await supabase.from('rifas').update({ status: 'sorteada' }).eq('id', rifaId);
-
     toast.success('Sorteio realizado!');
     setSorteando(false);
   };
