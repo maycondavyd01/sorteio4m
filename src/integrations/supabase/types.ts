@@ -14,7 +14,150 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      bilhetes: {
+        Row: {
+          id: string
+          numero: number
+          pedido_id: string | null
+          rifa_id: string
+          status: string
+        }
+        Insert: {
+          id?: string
+          numero: number
+          pedido_id?: string | null
+          rifa_id: string
+          status?: string
+        }
+        Update: {
+          id?: string
+          numero?: number
+          pedido_id?: string | null
+          rifa_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bilhetes_pedido_id_fkey"
+            columns: ["pedido_id"]
+            isOneToOne: false
+            referencedRelation: "pedidos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bilhetes_rifa_id_fkey"
+            columns: ["rifa_id"]
+            isOneToOne: false
+            referencedRelation: "rifas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      compradores: {
+        Row: {
+          created_at: string | null
+          id: string
+          nome: string
+          whatsapp: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          nome: string
+          whatsapp: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          nome?: string
+          whatsapp?: string
+        }
+        Relationships: []
+      }
+      pedidos: {
+        Row: {
+          comprador_id: string
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          pix_copia_cola: string | null
+          rifa_id: string
+          status: string
+          valor_total: number
+        }
+        Insert: {
+          comprador_id: string
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          pix_copia_cola?: string | null
+          rifa_id: string
+          status?: string
+          valor_total: number
+        }
+        Update: {
+          comprador_id?: string
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          pix_copia_cola?: string | null
+          rifa_id?: string
+          status?: string
+          valor_total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pedidos_comprador_id_fkey"
+            columns: ["comprador_id"]
+            isOneToOne: false
+            referencedRelation: "compradores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedidos_rifa_id_fkey"
+            columns: ["rifa_id"]
+            isOneToOne: false
+            referencedRelation: "rifas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rifas: {
+        Row: {
+          created_at: string | null
+          descricao: string | null
+          foto_url: string | null
+          ganhador_id: string | null
+          id: string
+          nome: string
+          preco_cota: number
+          status: string
+          total_cotas: number
+        }
+        Insert: {
+          created_at?: string | null
+          descricao?: string | null
+          foto_url?: string | null
+          ganhador_id?: string | null
+          id?: string
+          nome: string
+          preco_cota: number
+          status?: string
+          total_cotas?: number
+        }
+        Update: {
+          created_at?: string | null
+          descricao?: string | null
+          foto_url?: string | null
+          ganhador_id?: string | null
+          id?: string
+          nome?: string
+          preco_cota?: number
+          status?: string
+          total_cotas?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
