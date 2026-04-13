@@ -75,13 +75,6 @@ export function GradeBilhetes({ bilhetes, totalCotas }: Props) {
     }
   }, [bilhetesMap, toggleBilhete]);
 
-  const filtros: { label: string; value: FiltroStatus; count: number; className: string }[] = [
-    { label: 'Todos', value: 'todos', count: contagens.todos, className: 'bg-foreground text-background' },
-    { label: 'Disponíveis', value: 'disponivel', count: contagens.disponivel, className: 'bg-secondary text-foreground' },
-    { label: 'Pagos', value: 'pago', count: contagens.pago, className: 'bg-rifa-paid text-primary-foreground' },
-    { label: 'Reservados', value: 'reservado', count: contagens.reservado, className: 'bg-rifa-reserved text-primary-foreground' },
-  ];
-
   const formatNum = (n: number) => String(n).padStart(3, '0');
 
   return (
@@ -94,31 +87,10 @@ export function GradeBilhetes({ bilhetes, totalCotas }: Props) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-2 px-4 mb-4">
-        {filtros.map((f) => (
-          <button
-            key={f.value}
-            onClick={() => setFiltro(f.value)}
-            className={cn(
-              'rounded-full py-2 px-4 text-sm font-semibold flex items-center justify-center gap-2 transition-all',
-              filtro === f.value ? f.className : 'bg-secondary text-muted-foreground'
-            )}
-          >
-            {f.label}
-            <span className={cn(
-              'text-xs px-2 py-0.5 rounded-full font-bold',
-              filtro === f.value ? 'bg-background/20 text-inherit' : 'bg-muted text-muted-foreground'
-            )}>
-              {f.count}
-            </span>
-          </button>
-        ))}
-      </div>
-
       <div ref={parentRef} className="h-[400px] overflow-auto px-4">
         <div
           style={{ height: `${virtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}
-        >
+        >aaaassa
           {virtualizer.getVirtualItems().map((virtualRow) => {
             const row = rows[virtualRow.index];
             return (

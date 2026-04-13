@@ -7,6 +7,7 @@ import { BarraCompra } from '../components/BarraCompra';
 import { Header } from '@/components/Header';
 import { AppShell } from '@/components/AppShell';
 import { Camera, Trophy } from 'lucide-react';
+import { FaWhatsapp, FaFacebookF, FaInstagram } from 'react-icons/fa';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function PaginaRifa() {
@@ -81,25 +82,28 @@ export default function PaginaRifa() {
             href={`https://wa.me/?text=${encodeURIComponent(window.location.href)}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-10 h-10 rounded-full bg-[hsl(142,71%,45%)] flex items-center justify-center text-primary-foreground font-bold text-xs"
+            className="w-10 h-10 rounded-full bg-[#25D366] flex items-center justify-center text-white"
           >
-            Wa
+            <FaWhatsapp size={20} />
           </a>
           <a
             href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-10 h-10 rounded-full bg-[hsl(220,46%,48%)] flex items-center justify-center text-primary-foreground font-bold text-xs"
+            className="w-10 h-10 rounded-full bg-[#1877F2] flex items-center justify-center text-white"
           >
-            Fb
+            <FaFacebookF size={18} />
           </a>
           <a
-            href={`https://t.me/share/url?url=${encodeURIComponent(window.location.href)}`}
+            href={`https://www.instagram.com/`}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-10 h-10 rounded-full bg-[hsl(200,80%,50%)] flex items-center justify-center text-primary-foreground font-bold text-xs"
+            className="w-10 h-10 rounded-full flex items-center justify-center text-white"
+            style={{
+              background: 'radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285AEB 90%)'
+            }}
           >
-            Tg
+            <FaInstagram size={20} />
           </a>
         </div>
       </div>

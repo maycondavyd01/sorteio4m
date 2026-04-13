@@ -11,6 +11,7 @@ import Dashboard from "./features/admin/pages/Dashboard";
 import Pedidos from "./features/admin/pages/Pedidos";
 import Sorteio from "./features/admin/pages/Sorteio";
 import NotFound from "./pages/NotFound";
+import Index from "./pages/Index";
 
 const queryClient = new QueryClient();
 
@@ -21,7 +22,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Navigate to="/rifa/00000000-0000-0000-0000-000000000001" replace />} />
+          <Route path="/" element={<Index />} />
           <Route path="/rifa/:id" element={<PaginaRifa />} />
           <Route path="/checkout" element={<PaginaCheckout />} />
           <Route path="/meus-bilhetes" element={<PaginaMeusBilhetes />} />
