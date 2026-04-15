@@ -48,15 +48,15 @@ export default function PaginaCheckout() {
   } = useForm<FormData>({ resolver: zodResolver(schema) });
 
   useQuery({
-    queryKey: ['pedido-status', pedidoId],
+    queryKey: ['order-status', pedidoId],
     queryFn: async () => {
       if (!pedidoId) return null;
       const { data } = await supabase
-        .from('pedidos')
+        .from('orders')
         .select('status')
         .eq('id', pedidoId)
         .single();
-      if (data && data.status === 'pago') {
+      if (data && data.status === 'paid') {
         toast.success('Pagamento confirmado! 🎉');
         limpar();
         navigate('/meus-bilhetes');
@@ -85,44 +85,32 @@ export default function PaginaCheckout() {
     if (!rifaId) return;
     setSubmitting(true);
     try {
-      let compradorId: string;
-      const { data: existing } = await supabase
-        .from('compradores')
-        .select('id')
-        .eq('whatsapp', form.whatsapp)
-        .maybeSingle();
-
-      if (existing) {
-        compradorId = existing.id;
-      } else {
-        const { data: newC, error: errC } = await supabase
-          .from('compradores')
-          .insert({ nome: form.nome, whatsapp: form.whatsapp })
-          .select('id')
-          .single();
-        if (errC || !newC) throw errC || new Error('Erro ao criar comprador');
-        compradorId = newC.id;
-      }
-
       const pixCode = `00020126580014BR.GOV.BCB.PIX0136${crypto.randomUUID()}5204000053039865404${total.toFixed(2)}5802BR`;
       const { data: pedido, error: errP } = await supabase
-        .from('pedidos')
+        .from('orders')
         .insert({
-          comprador_id: compradorId,
-          rifa_id: rifaId,
-          valor_total: total,
-          pix_copia_cola: pixCode,
+          raffle_id: rifaId,
+          full_name: form.nome,
+          phone: form.whatsapp,
+          total_amount: total,
+          pix_copy_paste: pixCode,
+          profile_id: null,
         })
         .select()
         .single();
       if (errP || !pedido) throw errP || new Error('Erro ao criar pedido');
 
+      const reservedAt = new Date().toISOString();
       for (const numero of bilhetesSelecionados) {
         await supabase
-          .from('bilhetes')
-          .update({ status: 'reservado', pedido_id: pedido.id })
-          .eq('rifa_id', rifaId)
-          .eq('numero', numero);
+          .from('tickets')
+          .update({
+            status: 'reserved',
+            order_id: pedido.id,
+            reserved_at: reservedAt,
+          })
+          .eq('raffle_id', rifaId)
+          .eq('number', numero);
       }
 
       setPedidoId(pedido.id);

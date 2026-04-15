@@ -7,21 +7,21 @@ export default function Dashboard() {
     queryKey: ['admin-stats'],
     queryFn: async () => {
       const { data: pedidosPagos } = await supabase
-        .from('pedidos')
-        .select('valor_total')
-        .eq('status', 'pago');
+        .from('orders')
+        .select('total_amount')
+        .eq('status', 'paid');
 
       const { data: bilhetesPagos } = await supabase
-        .from('bilhetes')
+        .from('tickets')
         .select('id')
-        .eq('status', 'pago');
+        .eq('status', 'sold');
 
       const { data: reservas } = await supabase
-        .from('pedidos')
+        .from('orders')
         .select('id')
-        .eq('status', 'pendente');
+        .eq('status', 'pending');
 
-      const totalArrecadado = pedidosPagos?.reduce((s, p) => s + Number(p.valor_total), 0) ?? 0;
+      const totalArrecadado = pedidosPagos?.reduce((s, p) => s + Number(p.total_amount), 0) ?? 0;
 
       return {
         totalArrecadado,

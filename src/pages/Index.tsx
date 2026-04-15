@@ -25,19 +25,19 @@ export default function Index() {
                 className="block border rounded-lg overflow-hidden hover:opacity-90 transition-opacity"
               >
                 <div className="bg-secondary aspect-video flex items-center justify-center">
-                  {rifa.foto_url ? (
-                    <img src={rifa.foto_url} alt={rifa.nome} className="w-full h-full object-cover" />
+                  {rifa.image_url ? (
+                    <img src={rifa.image_url} alt={rifa.title} className="w-full h-full object-cover" />
                   ) : (
                     <Camera size={48} className="text-muted-foreground/40" />
                   )}
                 </div>
                 <div className="p-3">
-                  <h2 className="font-bold">{rifa.nome}</h2>
+                  <h2 className="font-bold">{rifa.title}</h2>
                   <p className="text-sm text-muted-foreground">
-                    R$ {Number(rifa.preco_cota).toFixed(2).replace('.', ',')} por cota
+                    R$ {Number(rifa.price_per_ticket).toFixed(2).replace('.', ',')} por cota
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {rifa.total_cotas} cotas disponíveis
+                    {rifa.total_tickets} cotas disponíveis
                   </p>
                 </div>
               </Link>

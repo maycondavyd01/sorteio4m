@@ -7,156 +7,207 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
-      bilhetes: {
+      draws: {
         Row: {
           id: string
-          numero: number
-          pedido_id: string | null
-          rifa_id: string
-          status: string
+          raffle_id: string
+          winning_order_id: string | null
+          winning_number: number
+          result_proof: string | null
+          drawn_at: string | null
         }
         Insert: {
           id?: string
-          numero: number
-          pedido_id?: string | null
-          rifa_id: string
-          status?: string
+          raffle_id: string
+          winning_order_id?: string | null
+          winning_number: number
+          result_proof?: string | null
+          drawn_at?: string | null
         }
         Update: {
           id?: string
-          numero?: number
-          pedido_id?: string | null
-          rifa_id?: string
-          status?: string
+          raffle_id?: string
+          winning_order_id?: string | null
+          winning_number?: number
+          result_proof?: string | null
+          drawn_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "bilhetes_pedido_id_fkey"
-            columns: ["pedido_id"]
-            isOneToOne: false
-            referencedRelation: "pedidos"
+            foreignKeyName: "draws_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: true
+            referencedRelation: "raffles"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "bilhetes_rifa_id_fkey"
-            columns: ["rifa_id"]
+            foreignKeyName: "draws_winning_order_id_fkey"
+            columns: ["winning_order_id"]
             isOneToOne: false
-            referencedRelation: "rifas"
+            referencedRelation: "orders"
             referencedColumns: ["id"]
           },
         ]
       }
-      compradores: {
+      orders: {
         Row: {
-          created_at: string | null
           id: string
-          nome: string
-          whatsapp: string
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          nome: string
-          whatsapp: string
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          nome?: string
-          whatsapp?: string
-        }
-        Relationships: []
-      }
-      pedidos: {
-        Row: {
-          comprador_id: string
-          created_at: string | null
+          raffle_id: string
+          profile_id: string | null
+          full_name: string
+          phone: string
+          total_amount: number
+          status: string
+          pix_copy_paste: string | null
           expires_at: string | null
-          id: string
-          pix_copia_cola: string | null
-          rifa_id: string
-          status: string
-          valor_total: number
+          created_at: string | null
         }
         Insert: {
-          comprador_id: string
-          created_at?: string | null
-          expires_at?: string | null
           id?: string
-          pix_copia_cola?: string | null
-          rifa_id: string
+          raffle_id: string
+          profile_id?: string | null
+          full_name: string
+          phone: string
+          total_amount: number
           status?: string
-          valor_total: number
+          pix_copy_paste?: string | null
+          expires_at?: string | null
+          created_at?: string | null
         }
         Update: {
-          comprador_id?: string
-          created_at?: string | null
-          expires_at?: string | null
           id?: string
-          pix_copia_cola?: string | null
-          rifa_id?: string
+          raffle_id?: string
+          profile_id?: string | null
+          full_name?: string
+          phone?: string
+          total_amount?: number
           status?: string
-          valor_total?: number
+          pix_copy_paste?: string | null
+          expires_at?: string | null
+          created_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "pedidos_comprador_id_fkey"
-            columns: ["comprador_id"]
+            foreignKeyName: "orders_raffle_id_fkey"
+            columns: ["raffle_id"]
             isOneToOne: false
-            referencedRelation: "compradores"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "pedidos_rifa_id_fkey"
-            columns: ["rifa_id"]
-            isOneToOne: false
-            referencedRelation: "rifas"
+            referencedRelation: "raffles"
             referencedColumns: ["id"]
           },
         ]
       }
-      rifas: {
+      profiles: {
         Row: {
-          created_at: string | null
-          descricao: string | null
-          foto_url: string | null
-          ganhador_id: string | null
           id: string
-          nome: string
-          preco_cota: number
-          status: string
-          total_cotas: number
+          full_name: string | null
+          phone: string | null
+          created_at: string | null
         }
         Insert: {
+          id: string
+          full_name?: string | null
+          phone?: string | null
           created_at?: string | null
-          descricao?: string | null
-          foto_url?: string | null
-          ganhador_id?: string | null
-          id?: string
-          nome: string
-          preco_cota: number
-          status?: string
-          total_cotas?: number
         }
         Update: {
-          created_at?: string | null
-          descricao?: string | null
-          foto_url?: string | null
-          ganhador_id?: string | null
           id?: string
-          nome?: string
-          preco_cota?: number
-          status?: string
-          total_cotas?: number
+          full_name?: string | null
+          phone?: string | null
+          created_at?: string | null
         }
         Relationships: []
+      }
+      raffles: {
+        Row: {
+          id: string
+          title: string
+          description: string | null
+          image_url: string | null
+          price_per_ticket: number
+          total_tickets: number
+          status: string
+          created_by: string | null
+          created_at: string | null
+          min_tickets_per_order: number | null
+          max_tickets_per_order: number | null
+        }
+        Insert: {
+          id?: string
+          title: string
+          description?: string | null
+          image_url?: string | null
+          price_per_ticket: number
+          total_tickets?: number
+          status?: string
+          created_by?: string | null
+          created_at?: string | null
+          min_tickets_per_order?: number | null
+          max_tickets_per_order?: number | null
+        }
+        Update: {
+          id?: string
+          title?: string
+          description?: string | null
+          image_url?: string | null
+          price_per_ticket?: number
+          total_tickets?: number
+          status?: string
+          created_by?: string | null
+          created_at?: string | null
+          min_tickets_per_order?: number | null
+          max_tickets_per_order?: number | null
+        }
+        Relationships: []
+      }
+      tickets: {
+        Row: {
+          id: string
+          raffle_id: string
+          number: number
+          status: string
+          order_id: string | null
+          reserved_at: string | null
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          raffle_id: string
+          number: number
+          status?: string
+          order_id?: string | null
+          reserved_at?: string | null
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          raffle_id?: string
+          number?: number
+          status?: string
+          order_id?: string | null
+          reserved_at?: string | null
+          created_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tickets_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_raffle_id_fkey"
+            columns: ["raffle_id"]
+            isOneToOne: false
+            referencedRelation: "raffles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

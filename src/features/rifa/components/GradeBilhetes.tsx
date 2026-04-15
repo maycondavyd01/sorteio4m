@@ -1,14 +1,12 @@
-import { useMemo, useRef, useState, useCallback } from 'react';
+import { useMemo, useRef, useCallback } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useCarrinho } from '@/store/useCarrinho';
 import { cn } from '@/lib/utils';
 
 const COLS = 5;
 
-type FiltroStatus = 'todos' | 'disponivel' | 'pago' | 'reservado';
-
 interface BilheteRow {
-  numero: number;
+  number: number;
   status: string;
 }
 
@@ -18,27 +16,22 @@ interface Props {
 }
 
 export function GradeBilhetes({ bilhetes, totalCotas }: Props) {
-  const [filtro, setFiltro] = useState<FiltroStatus>('todos');
   const { bilhetesSelecionados, toggleBilhete } = useCarrinho();
   const parentRef = useRef<HTMLDivElement>(null);
 
   const bilhetesMap = useMemo(() => {
     const map = new Map<number, BilheteRow>();
-    bilhetes.forEach((b) => map.set(b.numero, b));
+    bilhetes.forEach((b) => map.set(b.number, b));
     return map;
   }, [bilhetes]);
 
   const numerosVisiveis = useMemo(() => {
     const nums: number[] = [];
-    for (let i = 0; i < totalCotas; i++) {
-      const b = bilhetesMap.get(i);
-      const status = b?.status ?? 'disponivel';
-      if (filtro === 'todos' || filtro === status) {
-        nums.push(i);
-      }
+    for (let i = 1; i <= totalCotas; i++) {
+      nums.push(i);
     }
     return nums;
-  }, [totalCotas, bilhetesMap, filtro]);
+  }, [totalCotas]);
 
   const rows = useMemo(() => {
     const result: number[][] = [];
@@ -55,22 +48,10 @@ export function GradeBilhetes({ bilhetes, totalCotas }: Props) {
     overscan: 10,
   });
 
-  const contagens = useMemo(() => {
-    let disponivel = 0, pago = 0, reservado = 0;
-    for (let i = 0; i < totalCotas; i++) {
-      const b = bilhetesMap.get(i);
-      const s = b?.status ?? 'disponivel';
-      if (s === 'disponivel') disponivel++;
-      else if (s === 'pago') pago++;
-      else if (s === 'reservado') reservado++;
-    }
-    return { todos: totalCotas, disponivel, pago, reservado };
-  }, [totalCotas, bilhetesMap]);
-
   const handleClick = useCallback((numero: number) => {
     const b = bilhetesMap.get(numero);
-    const status = b?.status ?? 'disponivel';
-    if (status === 'disponivel') {
+    const status = b?.status ?? 'available';
+    if (status === 'available') {
       toggleBilhete(numero);
     }
   }, [bilhetesMap, toggleBilhete]);
@@ -90,7 +71,7 @@ export function GradeBilhetes({ bilhetes, totalCotas }: Props) {
       <div ref={parentRef} className="h-[400px] overflow-auto px-4">
         <div
           style={{ height: `${virtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}
-        >aaaassa
+        >
           {virtualizer.getVirtualItems().map((virtualRow) => {
             const row = rows[virtualRow.index];
             return (
@@ -108,19 +89,19 @@ export function GradeBilhetes({ bilhetes, totalCotas }: Props) {
               >
                 {row.map((numero) => {
                   const b = bilhetesMap.get(numero);
-                  const status = b?.status ?? 'disponivel';
+                  const status = b?.status ?? 'available';
                   const selecionado = bilhetesSelecionados.includes(numero);
 
                   return (
                     <button
                       key={numero}
                       onClick={() => handleClick(numero)}
-                      disabled={status !== 'disponivel'}
+                      disabled={status !== 'available'}
                       className={cn(
                         'rounded-lg py-2 text-sm font-semibold transition-all border',
-                        status === 'pago' && 'bg-rifa-paid text-primary-foreground border-transparent cursor-not-allowed',
-                        status === 'reservado' && 'bg-rifa-reserved text-primary-foreground border-transparent cursor-not-allowed',
-                        status === 'disponivel' && !selecionado && 'bg-rifa-available text-foreground border-border hover:border-primary',
+                        status === 'sold' && 'bg-rifa-paid text-primary-foreground border-transparent cursor-not-allowed',
+                        status === 'reserved' && 'bg-rifa-reserved text-primary-foreground border-transparent cursor-not-allowed',
+                        status === 'available' && !selecionado && 'bg-rifa-available text-foreground border-border hover:border-primary',
                         selecionado && 'bg-rifa-selected text-primary-foreground border-transparent scale-95',
                       )}
                     >

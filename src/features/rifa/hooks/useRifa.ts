@@ -6,7 +6,7 @@ export function useRifa(id: string) {
     queryKey: ['rifa', id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('rifas')
+        .from('raffles')
         .select('*')
         .eq('id', id)
         .single();
@@ -18,13 +18,13 @@ export function useRifa(id: string) {
 
 export function useBilhetes(rifaId: string) {
   return useQuery({
-    queryKey: ['bilhetes', rifaId],
+    queryKey: ['tickets', rifaId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('bilhetes')
+        .from('tickets')
         .select('*')
-        .eq('rifa_id', rifaId)
-        .order('numero', { ascending: true });
+        .eq('raffle_id', rifaId)
+        .order('number', { ascending: true });
       if (error) throw error;
       return data;
     },
@@ -34,11 +34,12 @@ export function useBilhetes(rifaId: string) {
 
 export function useRifas() {
   return useQuery({
-    queryKey: ['rifas'],
+    queryKey: ['raffles'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('rifas')
+        .from('raffles')
         .select('*')
+        .eq('status', 'active')
         .order('created_at', { ascending: false });
       if (error) throw error;
       return data;

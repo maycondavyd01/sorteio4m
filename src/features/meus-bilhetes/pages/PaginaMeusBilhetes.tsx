@@ -16,9 +16,9 @@ function maskPhone(value: string) {
 
 interface PedidoComBilhetes {
   id: string;
-  valor_total: number;
+  total_amount: number;
   status: string;
-  bilhetes: { id: string; numero: number; status: string }[];
+  bilhetes: { id: string; number: number; status: string }[];
 }
 
 export default function PaginaMeusBilhetes() {
@@ -32,21 +32,10 @@ export default function PaginaMeusBilhetes() {
     setLoading(true);
     setSearched(true);
     try {
-      const { data: comprador } = await supabase
-        .from('compradores')
-        .select('id')
-        .eq('whatsapp', whatsapp)
-        .maybeSingle();
-
-      if (!comprador) {
-        setPedidos([]);
-        return;
-      }
-
       const { data: pedidosData } = await supabase
-        .from('pedidos')
-        .select('id, valor_total, status')
-        .eq('comprador_id', comprador.id)
+        .from('orders')
+        .select('id, total_amount, status')
+        .eq('phone', whatsapp)
         .order('created_at', { ascending: false });
 
       if (!pedidosData) {
@@ -57,10 +46,10 @@ export default function PaginaMeusBilhetes() {
       const result: PedidoComBilhetes[] = [];
       for (const p of pedidosData) {
         const { data: bilhetes } = await supabase
-          .from('bilhetes')
-          .select('id, numero, status')
-          .eq('pedido_id', p.id)
-          .order('numero');
+          .from('tickets')
+          .select('id, number, status')
+          .eq('order_id', p.id)
+          .order('number');
         result.push({ ...p, bilhetes: bilhetes ?? [] });
       }
       setPedidos(result);
@@ -70,9 +59,15 @@ export default function PaginaMeusBilhetes() {
   };
 
   const statusBadge = (status: string) => {
-    if (status === 'pago') return 'bg-rifa-paid text-primary-foreground';
-    if (status === 'pendente') return 'bg-rifa-reserved text-primary-foreground';
+    if (status === 'paid') return 'bg-rifa-paid text-primary-foreground';
+    if (status === 'pending') return 'bg-rifa-reserved text-primary-foreground';
     return 'bg-muted text-muted-foreground';
+  };
+
+  const labelStatus = (status: string) => {
+    if (status === 'paid') return 'Pago';
+    if (status === 'pending') return 'Pendente';
+    return 'Cancelado';
   };
 
   return (
@@ -103,23 +98,23 @@ export default function PaginaMeusBilhetes() {
             <div className="flex items-center justify-between">
               <p className="text-sm font-semibold">Pedido</p>
               <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${statusBadge(p.status)}`}>
-                {p.status === 'pago' ? 'Pago' : p.status === 'pendente' ? 'Pendente' : 'Cancelado'}
+                {labelStatus(p.status)}
               </span>
             </div>
             <p className="text-xs text-muted-foreground">
-              R$ {Number(p.valor_total).toFixed(2).replace('.', ',')}
+              R$ {Number(p.total_amount).toFixed(2).replace('.', ',')}
             </p>
             <div className="flex flex-wrap gap-1.5">
               {p.bilhetes.map((b) => (
                 <span
                   key={b.id}
                   className={`text-xs font-bold px-2.5 py-1 rounded-full ${
-                    b.status === 'pago'
+                    b.status === 'sold'
                       ? 'bg-rifa-paid text-primary-foreground'
                       : 'bg-rifa-reserved text-primary-foreground'
                   }`}
                 >
-                  {String(b.numero).padStart(3, '0')}
+                  {String(b.number).padStart(3, '0')}
                 </span>
               ))}
             </div>

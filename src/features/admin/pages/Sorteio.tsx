@@ -11,10 +11,17 @@ export default function Sorteio() {
   const [ganhador, setGanhador] = useState<{ nome: string; whatsapp: string; numero: number } | null>(null);
 
   const { data: rifas } = useQuery({
-    queryKey: ['admin-rifas-sorteio'],
+    queryKey: ['admin-raffles-draw'],
     queryFn: async () => {
-      const { data } = await supabase.from('rifas').select('id, nome, status').eq('status', 'ativa');
-      return data ?? [];
+      const { data: drawn } = await supabase.from('draws').select('raffle_id');
+      const drawnIds = new Set(drawn?.map((d) => d.raffle_id) ?? []);
+
+      const { data } = await supabase
+        .from('raffles')
+        .select('id, title, status')
+        .in('status', ['active', 'closed']);
+
+      return (data ?? []).filter((r) => !drawnIds.has(r.id));
     },
   });
 
@@ -25,10 +32,10 @@ export default function Sorteio() {
     await new Promise((r) => setTimeout(r, 2000));
 
     const { data: bilhetesPagos } = await supabase
-      .from('bilhetes')
-      .select('numero, pedido_id')
-      .eq('rifa_id', rifaId)
-      .eq('status', 'pago');
+      .from('tickets')
+      .select('number, order_id')
+      .eq('raffle_id', rifaId)
+      .eq('status', 'sold');
 
     if (!bilhetesPagos || bilhetesPagos.length === 0) {
       toast.error('Nenhum bilhete pago para sortear.');
@@ -39,30 +46,35 @@ export default function Sorteio() {
     const idx = Math.floor(Math.random() * bilhetesPagos.length);
     const vencedor = bilhetesPagos[idx];
 
-    // Get pedido and comprador info
     let nome = 'Desconhecido';
     let whatsapp = '';
-    if (vencedor.pedido_id) {
+    if (vencedor.order_id) {
       const { data: pedido } = await supabase
-        .from('pedidos')
-        .select('comprador_id')
-        .eq('id', vencedor.pedido_id)
+        .from('orders')
+        .select('full_name, phone')
+        .eq('id', vencedor.order_id)
         .single();
       if (pedido) {
-        const { data: comprador } = await supabase
-          .from('compradores')
-          .select('nome, whatsapp')
-          .eq('id', pedido.comprador_id)
-          .single();
-        if (comprador) {
-          nome = comprador.nome;
-          whatsapp = comprador.whatsapp;
-        }
+        nome = pedido.full_name ?? nome;
+        whatsapp = pedido.phone ?? '';
       }
     }
 
-    setGanhador({ nome, whatsapp, numero: vencedor.numero });
-    await supabase.from('rifas').update({ status: 'sorteada' }).eq('id', rifaId);
+    const { error: drawErr } = await supabase.from('draws').insert({
+      raffle_id: rifaId,
+      winning_order_id: vencedor.order_id,
+      winning_number: vencedor.number,
+    });
+    if (drawErr) {
+      console.error(drawErr);
+      toast.error('Erro ao registrar sorteio.');
+      setSorteando(false);
+      return;
+    }
+
+    await supabase.from('raffles').update({ status: 'finished' }).eq('id', rifaId);
+
+    setGanhador({ nome, whatsapp, numero: vencedor.number });
     toast.success('Sorteio realizado!');
     setSorteando(false);
   };
@@ -72,12 +84,12 @@ export default function Sorteio() {
       <h2 className="font-bold text-lg">Sorteio</h2>
 
       {rifas?.length === 0 && (
-        <p className="text-sm text-muted-foreground">Nenhuma rifa ativa para sortear.</p>
+        <p className="text-sm text-muted-foreground">Nenhuma rifa ativa ou encerrada sem sorteio.</p>
       )}
 
       {rifas?.map((r) => (
         <div key={r.id} className="bg-background rounded-xl border border-border p-5">
-          <p className="font-semibold mb-3">{r.nome}</p>
+          <p className="font-semibold mb-3">{r.title}</p>
           <Button
             onClick={() => sortear(r.id)}
             disabled={sorteando}
