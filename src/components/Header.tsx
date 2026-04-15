@@ -9,11 +9,11 @@ export function Header() {
     <header className="sticky top-0 z-50 bg-background border-b border-border">
       <div className="flex items-center justify-between px-4 h-14">
         <div className="w-10" />
-        <Link to="/" className="flex items-center">
+        <div className="flex items-center cursor-default">
           <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
             <span className="text-primary-foreground font-extrabold text-xl">R</span>
           </div>
-        </Link>
+        </div>
         <Link to="/meus-bilhetes" className="relative flex flex-col items-center text-muted-foreground">
           <ShoppingCart size={22} />
           <span className="text-[10px] mt-0.5">Meus bilhetes</span>
