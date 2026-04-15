@@ -1,4 +1,4 @@
-import { useMemo, useRef, useCallback } from 'react';
+import { useMemo, useRef, useCallback, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useCarrinho } from '@/store/useCarrinho';
 import { cn } from '@/lib/utils';
@@ -19,6 +19,7 @@ interface Props {
 export function GradeBilhetes({ bilhetes, totalCotas }: Props) {
   const { bilhetesSelecionados, toggleBilhete } = useCarrinho();
   const parentRef = useRef<HTMLDivElement>(null);
+  const [sementeAleatoria] = useState(() => Math.random());
 
   const bilhetesMap = useMemo(() => {
     const map = new Map<number, BilheteRow>();
@@ -32,13 +33,38 @@ export function GradeBilhetes({ bilhetes, totalCotas }: Props) {
 
   const limiteVisivel = Math.min(MAX_VISIVEIS + ticketsReservadosVendidos, totalCotas);
 
-  const numerosVisiveis = useMemo(() => {
-    const nums: number[] = [];
-    for (let i = 1; i <= limiteVisivel; i++) {
-      nums.push(i);
-    }
-    return nums;
+  const numerosOrdenados = useMemo(() => {
+    return Array.from({ length: limiteVisivel }, (_, i) => i + 1);
   }, [limiteVisivel]);
+
+  const numerosVisiveis = useMemo(() => {
+    const disponiveis = numerosOrdenados.filter(n => {
+      const b = bilhetesMap.get(n);
+      const status = b?.status ?? 'available';
+      return status === 'available';
+    });
+
+    const vendidosReservados = numerosOrdenados.filter(n => {
+      const b = bilhetesMap.get(n);
+      const status = b?.status ?? 'available';
+      return status === 'sold' || status === 'reserved';
+    });
+
+    const shuffle = (arr: number[], seed: number) => {
+      const result = [...arr];
+      let s = seed;
+      for (let i = result.length - 1; i > 0; i--) {
+        s = (s * 1103515245 + 12345) & 0x7fffffff;
+        const j = s % (i + 1);
+        [result[i], result[j]] = [result[j], result[i]];
+      }
+      return result;
+    };
+
+    const disponiveisShuffled = shuffle(disponiveis, Math.floor(sementeAleatoria * 1000000));
+    
+    return [...disponiveisShuffled, ...vendidosReservados];
+  }, [numerosOrdenados, bilhetesMap, sementeAleatoria]);
 
   const rows = useMemo(() => {
     const result: number[][] = [];
