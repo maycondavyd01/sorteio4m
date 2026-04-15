@@ -2,7 +2,8 @@ import { useRifas } from '@/features/rifa/hooks/useRifa';
 import { Header } from '@/components/Header';
 import { AppShell } from '@/components/AppShell';
 import { Link } from 'react-router-dom';
-import { Camera, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
+import { RAFFLE_DEFAULT_IMAGE } from '@/lib/raffleDefaultImage';
 
 export default function Index() {
   const { data: rifas, isLoading } = useRifas();
@@ -24,12 +25,15 @@ export default function Index() {
                 to={`/rifa/${rifa.id}`}
                 className="block border rounded-lg overflow-hidden hover:opacity-90 transition-opacity"
               >
-                <div className="bg-secondary aspect-video flex items-center justify-center">
-                  {rifa.image_url ? (
-                    <img src={rifa.image_url} alt={rifa.title} className="w-full h-full object-cover" />
-                  ) : (
-                    <Camera size={48} className="text-muted-foreground/40" />
-                  )}
+                <div className="bg-secondary flex justify-center">
+                  <img
+                    src={rifa.image_url ?? RAFFLE_DEFAULT_IMAGE}
+                    alt={rifa.title}
+                    width={800}
+                    height={1200}
+                    className="block h-auto w-full max-h-[min(70vh,520px)] w-auto max-w-full object-contain mx-auto"
+                    decoding="async"
+                  />
                 </div>
                 <div className="p-3">
                   <h2 className="font-bold">{rifa.title}</h2>

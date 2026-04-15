@@ -6,7 +6,8 @@ import { GradeBilhetes } from '../components/GradeBilhetes';
 import { BarraCompra } from '../components/BarraCompra';
 import { Header } from '@/components/Header';
 import { AppShell } from '@/components/AppShell';
-import { Camera, Trophy } from 'lucide-react';
+import { Trophy } from 'lucide-react';
+import { RAFFLE_DEFAULT_IMAGE } from '@/lib/raffleDefaultImage';
 import { FaWhatsapp, FaFacebookF, FaInstagram } from 'react-icons/fa';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -28,7 +29,7 @@ export default function PaginaRifa() {
       <AppShell>
         <Header />
         <div className="p-4 space-y-4">
-          <Skeleton className="w-full aspect-video rounded-xl" />
+          <Skeleton className="w-full aspect-[2/3] max-w-lg mx-auto rounded-xl" />
           <Skeleton className="h-8 w-48" />
           <Skeleton className="h-6 w-32" />
         </div>
@@ -48,13 +49,16 @@ export default function PaginaRifa() {
   return (
     <AppShell>
       <Header />
-      {/* Prize image */}
-      <div className="bg-secondary aspect-video flex items-center justify-center">
-        {rifa.image_url ? (
-          <img src={rifa.image_url} alt={rifa.title} className="w-full h-full object-cover" />
-        ) : (
-          <Camera size={64} className="text-muted-foreground/40" />
-        )}
+      {/* Prize image — proporção natural do arquivo (retrato); largura limitada para não esticar em telas grandes */}
+      <div className="bg-secondary flex justify-center px-0">
+        <img
+          src={rifa.image_url ?? RAFFLE_DEFAULT_IMAGE}
+          alt={rifa.title}
+          width={800}
+          height={1200}
+          className="block h-auto w-full max-w-lg object-contain"
+          decoding="async"
+        />
       </div>
 
       {/* Info */}
