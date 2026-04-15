@@ -128,7 +128,6 @@ export default function PaginaRifa() {
         </div>
         <div className="bg-secondary rounded-xl p-4">
           <p className="text-sm">
-            <span className="mr-2">🏆</span>
             <strong>1º ganhador(a):</strong> {rifa.title}
           </p>
           {rifa.description && <p className="text-xs text-muted-foreground mt-1">{rifa.description}</p>}
