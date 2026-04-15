@@ -56,7 +56,7 @@ export function GradeBilhetes({ bilhetes, totalCotas }: Props) {
     }
   }, [bilhetesMap, toggleBilhete]);
 
-  const formatNum = (n: number) => String(n).padStart(3, '0');
+  const formatNum = (n: number) => String(n).padStart(4, '0');
 
   return (
     <div>
