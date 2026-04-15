@@ -4,6 +4,7 @@ import { useCarrinho } from '@/store/useCarrinho';
 import { cn } from '@/lib/utils';
 
 const COLS = 5;
+const MAX_VISIVEIS = 300;
 
 interface BilheteRow {
   number: number;
@@ -25,13 +26,19 @@ export function GradeBilhetes({ bilhetes, totalCotas }: Props) {
     return map;
   }, [bilhetes]);
 
+  const ticketsReservadosVendidos = useMemo(() => {
+    return bilhetes.filter(b => b.status === 'sold' || b.status === 'reserved').length;
+  }, [bilhetes]);
+
+  const limiteVisivel = Math.min(MAX_VISIVEIS + ticketsReservadosVendidos, totalCotas);
+
   const numerosVisiveis = useMemo(() => {
     const nums: number[] = [];
-    for (let i = 1; i <= totalCotas; i++) {
+    for (let i = 1; i <= limiteVisivel; i++) {
       nums.push(i);
     }
     return nums;
-  }, [totalCotas]);
+  }, [limiteVisivel]);
 
   const rows = useMemo(() => {
     const result: number[][] = [];
