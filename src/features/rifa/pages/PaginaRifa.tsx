@@ -135,13 +135,12 @@ export default function PaginaRifa() {
         </div>
       </div>
 
-      {/* Footer */}
-      <footer className="text-center text-xs text-muted-foreground py-6 border-t border-border">
-        Plataforma de Rifas Online
-      </footer>
-
       <div className="h-20" />
       <BarraCompra />
+
+      <footer className="text-center text-xs text-muted-foreground py-6 border-t border-border mb-4">
+        Plataforma de Sorteios Online
+      </footer>
     </AppShell>
   );
 }
