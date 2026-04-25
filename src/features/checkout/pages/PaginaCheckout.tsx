@@ -1,51 +1,47 @@
 import { useNavigate } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { useCarrinho } from '@/store/useCarrinho';
 import { supabase } from '@/integrations/supabase/client';
 import { Header } from '@/components/Header';
 import { AppShell } from '@/components/AppShell';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { useState, useEffect } from 'react';
-import { Copy, Clock } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
-
-const schema = z.object({
-  nome: z.string().min(2, 'Nome obrigatório').max(100),
-  whatsapp: z.string()
-    .min(14, 'WhatsApp inválido')
-    .max(15, 'WhatsApp inválido')
-    .regex(/^\(\d{2}\)\s\d{4,5}-\d{4}$/, 'Formato: (11) 99999-9999'),
-});
-
-type FormData = z.infer<typeof schema>;
-
-function maskPhone(value: string) {
-  const digits = value.replace(/\D/g, '').slice(0, 11);
-  if (digits.length <= 2) return `(${digits}`;
-  if (digits.length <= 6) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
-  if (digits.length <= 10) return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
-  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
-}
+import { Copy, Clock, Loader2 } from 'lucide-react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { CheckoutAuth } from '../components/CheckoutAuth';
+import { useRifa } from '@/features/rifa/hooks/useRifa';
 
 export default function PaginaCheckout() {
   const { bilhetesSelecionados, rifaId, precoUnitario, limpar } = useCarrinho();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  const [session, setSession] = useState<any>(null);
+  const [loadingSession, setLoadingSession] = useState(true);
+
   const [pedidoId, setPedidoId] = useState<string | null>(null);
   const [pixCopiaECola, setPixCopiaECola] = useState<string | null>(null);
+  const [qrCodeBase64, setQrCodeBase64] = useState<string | null>(null);
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const {
-    register,
-    handleSubmit,
-    setValue,
-    formState: { errors },
-  } = useForm<FormData>({ resolver: zodResolver(schema) });
+  // Puxar descrição da rifa usando o hook existente
+  const { data: rifa } = useRifa(rifaId || '');
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setLoadingSession(false);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   useQuery({
     queryKey: ['order-status', pedidoId],
@@ -59,12 +55,13 @@ export default function PaginaCheckout() {
       if (data && data.status === 'paid') {
         toast.success('Pagamento confirmado! 🎉');
         limpar();
+        queryClient.invalidateQueries({ queryKey: ['tickets'] });
         navigate('/meus-bilhetes');
       }
       return data;
     },
     enabled: !!pedidoId,
-    refetchInterval: 5000,
+    refetchInterval: 3000,
   });
 
   if (bilhetesSelecionados.length === 0 && !pedidoId) {
@@ -81,45 +78,26 @@ export default function PaginaCheckout() {
 
   const total = bilhetesSelecionados.length * precoUnitario;
 
-  const onSubmit = async (form: FormData) => {
-    if (!rifaId) return;
+  const onConfirmPurchase = async () => {
+    if (!rifaId || !session) return;
     setSubmitting(true);
     try {
-      const pixCode = `00020126580014BR.GOV.BCB.PIX0136${crypto.randomUUID()}5204000053039865404${total.toFixed(2)}5802BR`;
-      const { data: pedido, error: errP } = await supabase
-        .from('orders')
-        .insert({
-          raffle_id: rifaId,
-          full_name: form.nome,
-          phone: form.whatsapp,
-          total_amount: total,
-          pix_copy_paste: pixCode,
-          profile_id: null,
-        })
-        .select()
-        .single();
-      if (errP || !pedido) throw errP || new Error('Erro ao criar pedido');
+      const { data, error } = await supabase.functions.invoke('create-pix-payment', {
+        body: { raffleId: rifaId, bilhetes: bilhetesSelecionados },
+      });
 
-      const reservedAt = new Date().toISOString();
-      for (const numero of bilhetesSelecionados) {
-        await supabase
-          .from('tickets')
-          .update({
-            status: 'reserved',
-            order_id: pedido.id,
-            reserved_at: reservedAt,
-          })
-          .eq('raffle_id', rifaId)
-          .eq('number', numero);
-      }
+      if (error) throw new Error(error.message);
+      if (data.error) throw new Error(data.error);
 
-      setPedidoId(pedido.id);
-      setPixCopiaECola(pixCode);
-      setExpiresAt(pedido.expires_at);
-      toast.success('Pedido criado! Realize o pagamento via PIX.');
-    } catch (err) {
+      setPedidoId(data.orderId);
+      setPixCopiaECola(data.pixCopiaECola);
+      setQrCodeBase64(data.qrCodeBase64);
+      setExpiresAt(data.expiresAt);
+      
+      toast.success('PIX gerado! Realize o pagamento para garantir seus bilhetes.');
+    } catch (err: any) {
       console.error(err);
-      toast.error('Erro ao criar pedido. Tente novamente.');
+      toast.error(err.message || 'Erro ao gerar pagamento. Tente novamente.');
     } finally {
       setSubmitting(false);
     }
@@ -129,20 +107,31 @@ export default function PaginaCheckout() {
     return (
       <AppShell>
         <Header />
-        <div className="p-4 space-y-6">
+        <div className="p-4 space-y-6 max-w-lg mx-auto">
           <div className="text-center">
             <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
               <Clock size={32} className="text-primary" />
             </div>
             <h2 className="font-bold text-xl">Pagamento PIX</h2>
-            <p className="text-sm text-muted-foreground mt-1">Copie o código e pague no seu banco</p>
+            <p className="text-sm text-muted-foreground mt-1">Sua compra foi reservada.</p>
           </div>
 
           {expiresAt && <TimerCountdown expiresAt={expiresAt} />}
 
-          <div className="bg-secondary rounded-xl p-4">
-            <p className="text-xs text-muted-foreground mb-2">PIX Copia e Cola:</p>
-            <p className="text-xs font-mono break-all mb-3">{pixCopiaECola}</p>
+          <div className="bg-secondary rounded-xl p-4 flex flex-col items-center">
+            {qrCodeBase64 && (
+               <img 
+                 src={`data:image/png;base64,${qrCodeBase64}`} 
+                 alt="QR Code PIX" 
+                 className="w-48 h-48 mb-4 border rounded-xl shadow-sm bg-white p-2"
+               />
+            )}
+            
+            <p className="text-xs text-muted-foreground w-full text-left mb-2">Ou use o PIX Copia e Cola:</p>
+            <div className="w-full bg-background p-2 rounded-md border break-all text-xs font-mono mb-3 overflow-hidden text-ellipsis whitespace-nowrap">
+               {pixCopiaECola}
+            </div>
+            
             <Button
               className="w-full"
               onClick={() => {
@@ -155,9 +144,10 @@ export default function PaginaCheckout() {
             </Button>
           </div>
 
-          <p className="text-xs text-center text-muted-foreground">
-            Aguardando confirmação do pagamento...
-          </p>
+          <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+             <Loader2 size={12} className="animate-spin" />
+             Aguardando confirmação do pagamento...
+          </div>
         </div>
       </AppShell>
     );
@@ -166,48 +156,50 @@ export default function PaginaCheckout() {
   return (
     <AppShell>
       <Header />
-      <div className="p-4 space-y-6">
+      <div className="p-4 space-y-6 max-w-lg mx-auto">
         <h2 className="font-bold text-xl">Finalizar Compra</h2>
 
-        <div className="bg-secondary rounded-xl p-4">
+        <div className="bg-secondary/50 rounded-xl p-4 border border-border">
+          {rifa && (
+             <div className="mb-4 pb-4 border-b border-border">
+                <h3 className="font-bold">{rifa.title}</h3>
+                {rifa.description && (
+                   <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{rifa.description}</p>
+                )}
+             </div>
+          )}
+          
           <p className="text-sm font-semibold mb-2">
             Bilhetes selecionados ({bilhetesSelecionados.length}):
           </p>
-          <div className="flex flex-wrap gap-1.5">
+          <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto mb-2">
             {bilhetesSelecionados.sort((a, b) => a - b).map((n) => (
               <span key={n} className="bg-primary text-primary-foreground text-xs font-bold px-2.5 py-1 rounded-full">
                 {String(n).padStart(3, '0')}
               </span>
             ))}
           </div>
-          <p className="text-sm font-bold mt-3">
+          <p className="text-lg font-bold mt-3 text-primary">
             Total: R$ {total.toFixed(2).replace('.', ',')}
           </p>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div>
-            <Label htmlFor="nome">Nome completo</Label>
-            <Input id="nome" placeholder="Seu nome" {...register('nome')} />
-            {errors.nome && <p className="text-xs text-destructive mt-1">{errors.nome.message}</p>}
-          </div>
-          <div>
-            <Label htmlFor="whatsapp">WhatsApp</Label>
-            <Input
-              id="whatsapp"
-              placeholder="(11) 99999-9999"
-              {...register('whatsapp')}
-              onChange={(e) => {
-                const masked = maskPhone(e.target.value);
-                setValue('whatsapp', masked, { shouldValidate: true });
-              }}
-            />
-            {errors.whatsapp && <p className="text-xs text-destructive mt-1">{errors.whatsapp.message}</p>}
-          </div>
-          <Button type="submit" className="w-full" disabled={submitting}>
-            {submitting ? 'Processando...' : 'Confirmar e Pagar via PIX'}
-          </Button>
-        </form>
+        {loadingSession ? (
+           <div className="py-8 flex justify-center"><Loader2 className="animate-spin" /></div>
+        ) : !session ? (
+           <CheckoutAuth onAuthSuccess={() => {}} />
+        ) : (
+           <div className="space-y-4">
+              <div className="bg-green-500/10 text-green-600 dark:text-green-400 p-4 rounded-xl text-sm font-medium text-center">
+                 Autenticado com {session.user.email}. Tudo pronto para a compra!
+              </div>
+              <Button onClick={onConfirmPurchase} className="w-full h-12 text-md" disabled={submitting}>
+                {submitting ? (
+                   <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processando...</>
+                ) : 'Confirmar e Gerar PIX'}
+              </Button>
+           </div>
+        )}
       </div>
     </AppShell>
   );
@@ -234,7 +226,7 @@ function TimerCountdown({ expiresAt }: { expiresAt: string }) {
   return (
     <div className="text-center">
       <p className="text-3xl font-bold text-destructive font-mono">{remaining}</p>
-      <p className="text-xs text-muted-foreground">Tempo restante para pagamento</p>
+      <p className="text-xs text-muted-foreground">Tempo restante para efetuar o pagamento</p>
     </div>
   );
 }
